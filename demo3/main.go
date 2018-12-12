@@ -49,7 +49,7 @@ func main() {
 
 	// 修改podTemplate, 定义container列表
 	deployment.Spec.Template.Spec.Containers = containers
-
+	
 	// 更新deployment
 	if _, err = clientset.AppsV1beta1().Deployments("default").Update(&deployment); err != nil {
 		goto FAIL
