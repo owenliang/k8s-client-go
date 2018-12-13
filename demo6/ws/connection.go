@@ -17,8 +17,8 @@ var wsUpgrader = websocket.Upgrader{
 
 // websocket消息
 type WsMessage struct {
-	messageType int
-	data []byte
+	MessageType int
+	Data []byte
 }
 
 // 封装websocket连接
@@ -72,7 +72,7 @@ func (wsConn *WsConnection) wsWriteLoop() {
 		// 取一个应答
 		case msg = <- wsConn.outChan:
 			// 写给websocket
-			if err = wsConn.wsSocket.WriteMessage(msg.messageType, msg.data); err != nil {
+			if err = wsConn.wsSocket.WriteMessage(msg.MessageType, msg.Data); err != nil {
 				goto ERROR
 			}
 		case <- wsConn.closeChan:

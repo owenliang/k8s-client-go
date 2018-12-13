@@ -7,6 +7,14 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "github.com/docker/spdystream",
+			"Rev": "449fdfce4d962303d702fec724ef0ad181c92528"
+		},
+		{
+			"ImportPath": "github.com/docker/spdystream/spdy",
+			"Rev": "449fdfce4d962303d702fec724ef0ad181c92528"
+		},
+		{
 			"ImportPath": "github.com/gogo/protobuf/proto",
 			"Comment": "v0.5",
 			"Rev": "342cbe0a04158f6dcb03ca0079991a51a4248c02"
@@ -60,6 +68,11 @@
 		{
 			"ImportPath": "github.com/googleapis/gnostic/extensions",
 			"Rev": "0c5108395e2debce0d731cf0287ddf7242066aba"
+		},
+		{
+			"ImportPath": "github.com/gorilla/websocket",
+			"Comment": "v1.4.0-6-g95ba29e",
+			"Rev": "95ba29eb981bbb27d92e1f70bf8a1949452d926b"
 		},
 		{
 			"ImportPath": "github.com/gregjones/httpcache",
@@ -445,6 +458,16 @@
 			"Rev": "f1a02064268befe9cb07b02128ff1b6c24041bec"
 		},
 		{
+			"ImportPath": "k8s.io/apimachinery/pkg/util/httpstream",
+			"Comment": "kubernetes-1.14.0-alpha.0-27-gf1a0206",
+			"Rev": "f1a02064268befe9cb07b02128ff1b6c24041bec"
+		},
+		{
+			"ImportPath": "k8s.io/apimachinery/pkg/util/httpstream/spdy",
+			"Comment": "kubernetes-1.14.0-alpha.0-27-gf1a0206",
+			"Rev": "f1a02064268befe9cb07b02128ff1b6c24041bec"
+		},
+		{
 			"ImportPath": "k8s.io/apimachinery/pkg/util/intstr",
 			"Comment": "kubernetes-1.14.0-alpha.0-27-gf1a0206",
 			"Rev": "f1a02064268befe9cb07b02128ff1b6c24041bec"
@@ -461,6 +484,11 @@
 		},
 		{
 			"ImportPath": "k8s.io/apimachinery/pkg/util/net",
+			"Comment": "kubernetes-1.14.0-alpha.0-27-gf1a0206",
+			"Rev": "f1a02064268befe9cb07b02128ff1b6c24041bec"
+		},
+		{
+			"ImportPath": "k8s.io/apimachinery/pkg/util/remotecommand",
 			"Comment": "kubernetes-1.14.0-alpha.0-27-gf1a0206",
 			"Rev": "f1a02064268befe9cb07b02128ff1b6c24041bec"
 		},
@@ -496,6 +524,11 @@
 		},
 		{
 			"ImportPath": "k8s.io/apimachinery/pkg/watch",
+			"Comment": "kubernetes-1.14.0-alpha.0-27-gf1a0206",
+			"Rev": "f1a02064268befe9cb07b02128ff1b6c24041bec"
+		},
+		{
+			"ImportPath": "k8s.io/apimachinery/third_party/forked/golang/netutil",
 			"Comment": "kubernetes-1.14.0-alpha.0-27-gf1a0206",
 			"Rev": "f1a02064268befe9cb07b02128ff1b6c24041bec"
 		},
@@ -750,7 +783,17 @@
 			"Rev": "117d288bbeebfecd84ac5dde6a31dc16ee2ae55d"
 		},
 		{
+			"ImportPath": "k8s.io/client-go/tools/remotecommand",
+			"Comment": "kubernetes-1.14.0-alpha.0-56-g117d288b",
+			"Rev": "117d288bbeebfecd84ac5dde6a31dc16ee2ae55d"
+		},
+		{
 			"ImportPath": "k8s.io/client-go/transport",
+			"Comment": "kubernetes-1.14.0-alpha.0-56-g117d288b",
+			"Rev": "117d288bbeebfecd84ac5dde6a31dc16ee2ae55d"
+		},
+		{
+			"ImportPath": "k8s.io/client-go/transport/spdy",
 			"Comment": "kubernetes-1.14.0-alpha.0-56-g117d288b",
 			"Rev": "117d288bbeebfecd84ac5dde6a31dc16ee2ae55d"
 		},
@@ -761,6 +804,11 @@
 		},
 		{
 			"ImportPath": "k8s.io/client-go/util/connrotation",
+			"Comment": "kubernetes-1.14.0-alpha.0-56-g117d288b",
+			"Rev": "117d288bbeebfecd84ac5dde6a31dc16ee2ae55d"
+		},
+		{
+			"ImportPath": "k8s.io/client-go/util/exec",
 			"Comment": "kubernetes-1.14.0-alpha.0-56-g117d288b",
 			"Rev": "117d288bbeebfecd84ac5dde6a31dc16ee2ae55d"
 		},
