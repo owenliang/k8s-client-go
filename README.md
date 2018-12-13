@@ -11,6 +11,10 @@
 * demo5: xterm.js的基本用法, 为后续web ssh访问k8s container做铺垫
 * demo6: xterm.js+client-go remotecommand实现完美web ssh登录container
 
+# 效果
+
+<img src="web ssh.jpg">
+
 # 参考
 
 * [client-go doc](https://godoc.org/k8s.io/client-go/kubernetes)
