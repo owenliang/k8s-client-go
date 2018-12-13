@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="node_modules/xterm/dist/xterm.css" />
+    <script src="node_modules/xterm/dist/xterm.js"></script>
+    <script src="node_modules/xterm/dist/addons/fit/fit.js"></script>
+</head>
+<body>
+<div id="terminal"></div>
+<script>
+    // 安装自适应插件
+    Terminal.applyAddon(fit);
+
+    // 创建终端
+    var term = new Terminal();
+    term.open(document.getElementById('terminal'));
+
+    // 使用fit插件自适应terminal size
+    term.fit();
+
+    // 当浏览器窗口变化时, 重新适配终端
+    window.addEventListener("resize", function () {
+        term.fit()
+        // TODO: 应该把最新的term.rows和term.cols发给服务端, 通知sshd调整输出宽度
+        console.log(term.rows + "," + term.cols)
+    })
+
+    // 取得输入焦点
+    term.focus();
+
+    // 当向终端输入的时候回调
+    term.on('data', function(input) {
+        // TODO: 应该把input通过websocket发给服务端, 等待websocket回显以及应答
+        // 一旦收到websocket应答, 就应该调用term.write写到web terminal展示
+        console.log("输入:" + input)
+    })
+
+
+    //持续输出终端测试
+    setInterval(function() {
+        term.write('hello k8s')
+    }, 100);
+
+</script>
+</body>
+</html>
