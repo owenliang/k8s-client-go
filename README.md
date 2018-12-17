@@ -15,6 +15,10 @@
 
 # 效果
 
+# 效果
+
+<img src="web ssh.jpg">
+
 # 参考
 
 * [client-go doc](https://godoc.org/k8s.io/client-go/kubernetes)
