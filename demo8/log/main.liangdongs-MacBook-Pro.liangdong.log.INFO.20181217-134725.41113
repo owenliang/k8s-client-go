@@ -1,0 +1,6 @@
+Log file created at: 2018/12/17 13:47:25
+Running on machine: liangdongs-MacBook-Pro
+Binary: Built with gc go1.10.3 for darwin/amd64
+Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I1217 13:47:25.061007   41113 main.go:28] hello word
+I1217 13:47:25.061373   41113 main.go:31] 需要-v 5或者以上才可以打印出来!

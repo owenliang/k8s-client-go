@@ -11,6 +11,7 @@
 * demo5: xterm.js的基本用法, 为后续web ssh访问k8s container做铺垫
 * demo6: xterm.js+client-go remotecommand实现完美web ssh登录container
 * demo7: 获取POD内container的输出
+* demo8: client-go的sdk日志配置
 
 # 效果
 
