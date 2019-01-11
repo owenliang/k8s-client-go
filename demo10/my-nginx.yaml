@@ -1,0 +1,6 @@
+apiVersion: "mycompany.com/v1"
+kind: Nginx
+metadata:
+  name: my-nginx
+spec:
+  replicas: 2

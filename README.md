@@ -12,6 +12,7 @@
 * demo6: xterm.js+client-go remotecommand实现完美web ssh登录container
 * demo7: 获取POD内container的输出
 * demo8: client-go的sdk日志配置
+* demo9: 自定义CRD, 利用code generation生成controller骨架代码
 
 # 效果
 
