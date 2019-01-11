@@ -9,13 +9,19 @@ import (
 	"time"
 	"github.com/owenliang/k8s-client-go/demo10/pkg/client/informers/externalversions/nginx_controller/v1"
 	"github.com/owenliang/k8s-client-go/demo10/controller"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/informers"
+	core_v1 "k8s.io/client-go/informers/core/v1"
 )
 
 func main() {
 	var (
 		restConf *rest.Config
 		crdClientset *versioned.Clientset
+		clientset *kubernetes.Clientset
+		informerFactory informers.SharedInformerFactory
 		crdInformerFactory externalversions.SharedInformerFactory
+		podInformer core_v1.PodInformer
 		nginxInformer v1.NginxInformer
 		nginxController *controller.NginxController
 		err error
@@ -31,14 +37,23 @@ func main() {
 		goto FAIL
 	}
 
-	// Informer工厂
+	// 创建K8S内置的client
+	if clientset, err = kubernetes.NewForConfig(restConf); err != nil {
+		goto FAIL
+	}
+
+	// 内建informer工厂
+	informerFactory = informers.NewSharedInformerFactory(clientset, time.Second * 30)
+	// crd Informer工厂
 	crdInformerFactory = externalversions.NewSharedInformerFactory(crdClientset, time.Second * 30)
 
-	// 取得nginx informer
+	// POD informer
+	podInformer = informerFactory.Core().V1().Pods()
+	// nginx informer
 	nginxInformer = crdInformerFactory.Mycompany().V1().Nginxes()
 
 	// 创建调度controller
-	nginxController = &controller.NginxController{CrdClientset: crdClientset, NginxInformer: nginxInformer}
+	nginxController = &controller.NginxController{Clientset: clientset, CrdClientset: crdClientset, PodInformer:podInformer, NginxInformer: nginxInformer}
 	nginxController.Start()
 
 	// 等待

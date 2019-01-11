@@ -7,12 +7,63 @@ import (
 	"fmt"
 	nginx_v1 "github.com/owenliang/k8s-client-go/demo10/pkg/apis/nginx_controller/v1"
 	"k8s.io/client-go/util/workqueue"
+	core_v1 "k8s.io/client-go/informers/core/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 type NginxController struct {
+	Clientset *kubernetes.Clientset
 	CrdClientset *versioned.Clientset
+	PodInformer core_v1.PodInformer
 	NginxInformer v1.NginxInformer
+
 	workqueue workqueue.RateLimitingInterface
+}
+
+func (nginxController *NginxController)OnAddNginx(obj interface{}) {
+	var (
+		nginx *nginx_v1.Nginx
+	)
+
+	nginx = obj.(*nginx_v1.Nginx)
+	fmt.Println("OnAddNginx", nginx)
+
+	// 把event存到workqueue
+	nginxController.enqueueNginx(obj)
+}
+func (nginxController *NginxController) OnUpdateNginx(oldObj, newObj interface{}) {
+	var (
+		oldNginx *nginx_v1.Nginx
+		newNginx *nginx_v1.Nginx
+	)
+
+	oldNginx =  oldObj.(*nginx_v1.Nginx)
+	newNginx = newObj.(*nginx_v1.Nginx)
+	fmt.Println("OnUpdateNginx", oldNginx, newNginx)
+
+	// 把event存到workqueue
+	nginxController.enqueueNginx(newObj)
+}
+func (nginxController *NginxController) OnDeleteNginx(obj interface{}) {
+	var (
+		nginx *nginx_v1.Nginx
+	)
+
+	nginx = obj.(*nginx_v1.Nginx)
+	fmt.Println("OnDeleteNginx", nginx)
+
+	// 把event存到workqueue
+	nginxController.enqueueNginx(obj)
+}
+
+func (nginxController *NginxController)OnAddPod(obj interface{}) {
+	fmt.Println("OnAddPod")
+}
+func (nginxController *NginxController) OnUpdatePod(oldObj, newObj interface{}) {
+	fmt.Println("OnUpdatePod")
+}
+func (nginxController *NginxController) OnDeletePod(obj interface{}) {
+	fmt.Println("OnDeletePod")
 }
 
 func (nginxController *NginxController) Start() (err error) {
@@ -22,58 +73,46 @@ func (nginxController *NginxController) Start() (err error) {
 		syncOk bool
 	)
 
-	// 注册event handler
-	nginxController.NginxInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	// pod informer的event handler
+	nginxController.PodInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			var (
-				nginx *nginx_v1.Nginx
-			)
-
-			nginx = obj.(*nginx_v1.Nginx)
-			fmt.Println("OnAddNginx", nginx)
-
-			// 把event存到workqueue
-			nginxController.enqueueNginx(obj)
+			nginxController.OnAddPod(obj)
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			var (
-				oldNginx *nginx_v1.Nginx
-				newNginx *nginx_v1.Nginx
-			)
-
-			oldNginx =  oldObj.(*nginx_v1.Nginx)
-			newNginx = newObj.(*nginx_v1.Nginx)
-			fmt.Println("OnUpdateNginx", oldNginx, newNginx)
-
-			// 把event存到workqueue
-			nginxController.enqueueNginx(newObj)
+			nginxController.OnUpdatePod(oldObj, newObj)
 		},
 		DeleteFunc: func(obj interface{}) {
-			var (
-				nginx *nginx_v1.Nginx
-			)
-
-			nginx = obj.(*nginx_v1.Nginx)
-			fmt.Println("OnDeleteNginx", nginx)
-
-			// 把event存到workqueue
-			nginxController.enqueueNginx(obj)
+			nginxController.OnDeletePod(obj)
+		},
+	})
+	// nginx informer的event handler
+	nginxController.NginxInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			nginxController.OnAddNginx(obj)
+		},
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			nginxController.OnUpdateNginx(oldObj, newObj)
+		},
+		DeleteFunc: func(obj interface{}) {
+			nginxController.OnDeleteNginx(obj)
 		},
 	})
 
-	// 限速+去重的event队列
+	// nginx event handler会把event丢到workqueue里, 被processor消费
 	nginxController.workqueue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Nginx")
 
-	// nginx informer开始拉取事件，存到local cache，并回调event handler, 由event handler存入workqueue
+	// nginx informer开始拉取事件，存到local cache，并回调event handler
 	go nginxController.NginxInformer.Informer().Run(stopCh)
+	// pod informer开始拉取事件，存到local cache，并回调event handler
+	go nginxController.PodInformer.Informer().Run(stopCh)
 
 	// 等待etcd已有数据都下载回来, 再启动事件处理线程, 这样local cache可以反馈出贴近准实时的etcd数据，供逻辑决策准确
-	if syncOk = cache.WaitForCacheSync(stopCh, nginxController.NginxInformer.Informer().HasSynced); !syncOk {
+	if syncOk = cache.WaitForCacheSync(stopCh, nginxController.NginxInformer.Informer().HasSynced, nginxController.PodInformer.Informer().HasSynced); !syncOk {
 		err = fmt.Errorf("sync失败")
 		return
 	}
 
-	// 启动process事件处理
+	// 启动nginx event processor
 	for i = 0; i < 2; i++ {
 		go nginxController.runWorker()
 	}
