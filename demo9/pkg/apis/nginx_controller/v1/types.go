@@ -7,7 +7,7 @@ import (
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// 单个object, 例如：kubectl get nginxs.mycompany.com {name} -o yaml
+// 单个object, 例如：kubectl get nginxes.mycompany.com {name} -o yaml
 type Nginx struct {
 	meta_v1.TypeMeta   `json:",inline"`	// Kind, ApiVersion
 	meta_v1.ObjectMeta `json:"metadata"`	// metadata.name, metadata.namespace等...
@@ -17,7 +17,7 @@ type Nginx struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// object列表, 例如：kubectl get nginxs.mycompany.com -o yaml
+// object列表, 例如：kubectl get nginxes.mycompany.com -o yaml
 type NginxList struct {
 	meta_v1.TypeMeta `json:",inline"`	// Kind总是List
 	meta_v1.ListMeta `json:"metadata"`
