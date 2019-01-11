@@ -83,7 +83,17 @@ func (s nginxNamespaceLister) List(selector labels.Selector) (ret []*v1.Nginx, e
 
 // Get retrieves the Nginx from the indexer for a given namespace and name.
 func (s nginxNamespaceLister) Get(name string) (*v1.Nginx, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
+	var (
+		key string
+	)
+
+	if len(s.namespace) != 0 {
+		key = s.namespace + "/" + name
+	} else {
+		key = name
+	}
+
+	obj, exists, err := s.indexer.GetByKey(key)
 	if err != nil {
 		return nil, err
 	}

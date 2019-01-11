@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"github.com/owenliang/k8s-client-go/demo9/pkg/client/clientset/versioned"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	crd_v1 "github.com/owenliang/k8s-client-go/demo9/pkg/apis/nginx_controller/v1"
+	nginx_v1 "github.com/owenliang/k8s-client-go/demo9/pkg/apis/nginx_controller/v1"
 )
 
 func main() {
 	var (
 		restConf *rest.Config
 		crdClientset *versioned.Clientset
-		nginx *crd_v1.Nginx
+		nginx *nginx_v1.Nginx
 		err error
 	)
 

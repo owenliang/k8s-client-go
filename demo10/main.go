@@ -4,16 +4,20 @@ import (
 	"github.com/owenliang/k8s-client-go/common"
 	"k8s.io/client-go/rest"
 	"fmt"
-	"github.com/owenliang/k8s-client-go/demo9/pkg/client/clientset/versioned"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	crd_v1 "github.com/owenliang/k8s-client-go/demo9/pkg/apis/nginx_controller/v1"
+	"github.com/owenliang/k8s-client-go/demo10/pkg/client/clientset/versioned"
+	"github.com/owenliang/k8s-client-go/demo10/pkg/client/informers/externalversions"
+	"time"
+	"github.com/owenliang/k8s-client-go/demo10/pkg/client/informers/externalversions/nginx_controller/v1"
+	"github.com/owenliang/k8s-client-go/demo10/controller"
 )
 
 func main() {
 	var (
 		restConf *rest.Config
 		crdClientset *versioned.Clientset
-		nginx *crd_v1.Nginx
+		crdInformerFactory externalversions.SharedInformerFactory
+		nginxInformer v1.NginxInformer
+		nginxController *controller.NginxController
 		err error
 	)
 
@@ -27,12 +31,20 @@ func main() {
 		goto FAIL
 	}
 
-	// 获取CRD的nginx对象
-	if nginx, err = crdClientset.MycompanyV1().Nginxes("default").Get("my-nginx", v1.GetOptions{}); err != nil {
-		goto FAIL
-	}
+	// Informer工厂
+	crdInformerFactory = externalversions.NewSharedInformerFactory(crdClientset, time.Second * 30)
 
-	fmt.Println(nginx)
+	// 取得nginx informer
+	nginxInformer = crdInformerFactory.Mycompany().V1().Nginxes()
+
+	// 创建调度controller
+	nginxController = &controller.NginxController{CrdClientset: crdClientset, NginxInformer: nginxInformer}
+	nginxController.Start()
+
+	// 等待
+	for {
+		time.Sleep(1 * time.Second)
+	}
 
 	return
 

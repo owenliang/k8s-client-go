@@ -911,6 +911,11 @@
 			"Rev": "117d288bbeebfecd84ac5dde6a31dc16ee2ae55d"
 		},
 		{
+			"ImportPath": "k8s.io/client-go/util/workqueue",
+			"Comment": "kubernetes-1.14.0-alpha.0-56-g117d288b",
+			"Rev": "117d288bbeebfecd84ac5dde6a31dc16ee2ae55d"
+		},
+		{
 			"ImportPath": "k8s.io/klog",
 			"Rev": "8139d8cb77af419532b33dfa7dd09fbc5f1d344f"
 		},
