@@ -74,7 +74,7 @@ func (nginxController *NginxController) processNginxEvent() {
 	}
 
 	////////// 核心逻辑 ////////////
-	if err = nginxController.handleNginxEvent(key); err != nil {
+	if err = nginxController.handleNginxEvent(key); err != nil && !errors.IsNotFound(err) {
 		goto FAIL
 	}
 
@@ -93,7 +93,7 @@ func (nginxController *NginxController) handleNginxEvent(key string) (err error)
 		namespace string
 		name string
 		nginx *nginx_v1.Nginx
-		pods []*v1.Pod
+		pods []v1.Pod
 		requirement *labels.Requirement
 		selector labels.Selector
 		pod v1.Pod
@@ -101,6 +101,9 @@ func (nginxController *NginxController) handleNginxEvent(key string) (err error)
 		podId int
 		podCount int
 		nginxNotFound bool = false
+		running int
+		pending int
+		podList *v1.PodList
 	)
 
 	// 反解workqueue的key, 得到namespace/name
@@ -109,12 +112,10 @@ func (nginxController *NginxController) handleNginxEvent(key string) (err error)
 	}
 
 	// 获取local cache里的对应Nginx object
-	if nginx, err = nginxController.NginxInformer.Lister().Nginxes(namespace).Get(name); err != nil {
-		if !errors.IsNotFound(err) {
-			return
-		}
-		// Nginx对象已删除, 需要清理所有关联的PODS
-		err = nil
+	if nginx, err = nginxController.NginxInformer.Lister().Nginxes(namespace).Get(name); err != nil && !errors.IsNotFound(err) {
+		return
+	}
+	if errors.IsNotFound(err) {
 		nginxNotFound = true
 	}
 
@@ -125,9 +126,14 @@ func (nginxController *NginxController) handleNginxEvent(key string) (err error)
 	}
 	selector = selector.Add(*requirement)	// 注意返回值覆盖
 
-	if pods, err = nginxController.PodInformer.Lister().Pods(namespace).List(selector); err != nil {
+	// 出于调度实时性的需要, POD列表取apiserver最新的状态, 不走local cache
+	if podList, err = nginxController.Clientset.CoreV1().Pods(namespace).List(core_v1.ListOptions{LabelSelector: selector.String()}); err != nil {
 		return
 	}
+	pods = podList.Items
+	//if pods, err = nginxController.PodInformer.Lister().Pods(namespace).List(selector); err != nil {
+	//	return
+	//}
 
 	// 现有POD数量
 	podCount = len(pods)
@@ -135,50 +141,93 @@ func (nginxController *NginxController) handleNginxEvent(key string) (err error)
 	// nginx已删除, 清理所有关联PODS
 	if nginxNotFound {
 		for i := 0; i < podCount; i++ {
-			if err = nginxController.Clientset.CoreV1().Pods(pods[i].Namespace).Delete(pods[i].Name, nil); err != nil {
-				klog.Infoln("[Nginx - 清理POD]", key, pods[i].Name)
+			if err = nginxController.Clientset.CoreV1().Pods(pods[i].Namespace).Delete(pods[i].Name, nil); err != nil && !errors.IsNotFound(err) {
 				return
 			}
+			klog.Infoln("[Nginx - 清理POD]", key, pods[i].Name)
 		}
 		return
 	}
 
-	// 扩容与缩容
-	podId = int(time.Now().UnixNano())
+	// Nginx部署策略: 确保足够数量的POD运行即可
+	// 1, running+pending<replicas, 那么创建
+	// 2, running+pending>replicas, 那么删除
+	// 3, 其他状态的删除
 
-	for podCount < nginx.Spec.Replicas {
-		pod = v1.Pod{
-			ObjectMeta: core_v1.ObjectMeta{
-				Name:   "nginx-pod-" + strconv.Itoa(podId),
-				Labels: map[string]string{"nginxKey": key},
-			},
-			Spec: v1.PodSpec{
-				Containers: []v1.Container{
-					{Name: "nginx", Image: "nginx:latest"},
-				},
-			},
-		}
-		if namespace = nginx.Namespace; namespace == "" {
-			namespace = "default"
-		}
-		if created, err = nginxController.Clientset.CoreV1().Pods(namespace).Create(&pod); err != nil {
-			return
-		}
-		klog.Infoln("[Nginx - 扩容POD]", key, created.Name)
-		podId++
-		podCount++
-	}
-
-	// 缩容
-	if podCount > nginx.Spec.Replicas {
-		for i := 0; i < podCount - nginx.Spec.Replicas; i++ {
-			if err = nginxController.Clientset.CoreV1().Pods(pods[i].Namespace).Delete(pods[i].Name, nil); err != nil {
+	// 统计一下running和pending的POD个数
+	for i := 0; i < podCount; i++ {
+		if pods[i].Status.Phase == v1.PodRunning {
+			running++
+		} else if pods[i].Status.Phase == v1.PodPending {
+			pending++
+		} else { // 其他状态的删除
+			if err = nginxController.Clientset.CoreV1().Pods(pods[i].Namespace).Delete(pods[i].Name, nil); err != nil && !errors.IsNotFound(err) {
 				return
 			}
+		}
+	}
+
+	podId = int(time.Now().UnixNano())
+
+	// 扩容
+	if running + pending < nginx.Spec.Replicas {	// 不足就补充
+		toScale := nginx.Spec.Replicas - running - pending
+		for i := 0; i < toScale; i++ {
+			pod = v1.Pod{
+				ObjectMeta: core_v1.ObjectMeta{
+					Name:   "nginx-pod-" + strconv.Itoa(podId),
+					Labels: map[string]string{"nginxKey": key},
+				},
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						{Name: "nginx", Image: "nginx:latest"},
+					},
+				},
+			}
+			if namespace = nginx.Namespace; namespace == "" {
+				namespace = "default"
+			}
+			if created, err = nginxController.Clientset.CoreV1().Pods(namespace).Create(&pod); err != nil {
+				return
+			}
+			pods = append(pods, *created)
+			podId++
+			podCount++
+
+			klog.Infoln("[Nginx - 扩容POD]", key, created.Name)
+		}
+	} else if running + pending > nginx.Spec.Replicas { // 缩容
+		toDelete := running + pending - nginx.Spec.Replicas
+		// 先删pending的
+		for i := 0; i < len(pods); i++ {
+			if toDelete == 0 {
+				break
+			}
+			if pods[i].Status.Phase != v1.PodPending {
+				continue
+			}
+			if err = nginxController.Clientset.CoreV1().Pods(pods[i].Namespace).Delete(pods[i].Name, nil); err != nil && !errors.IsNotFound(err) {
+				return
+			}
+			toDelete--
+			klog.Infoln("[Nginx - 缩容POD]", key, pods[i].Name)
+		}
+		// 再删running的
+		for i := 0; i < len(pods); i++ {
+			if toDelete == 0 {
+				break
+			}
+			if pods[i].Status.Phase != v1.PodRunning {
+				continue
+			}
+			if err = nginxController.Clientset.CoreV1().Pods(pods[i].Namespace).Delete(pods[i].Name, nil); err != nil && !errors.IsNotFound(err){
+				return
+			}
+			toDelete--
 			klog.Infoln("[Nginx - 缩容POD]", key, pods[i].Name)
 		}
 	}
 
-	klog.Infoln("[Nginx - 更新]", key)
+	klog.Infoln("[Nginx - 更新]", key, "running:", running, "pending:", pending, "total:", podCount)
 	return
 }

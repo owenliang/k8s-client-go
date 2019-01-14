@@ -86,7 +86,7 @@ func (nginxController *NginxController) processPodEvent() {
 	}
 
 	////////// 核心逻辑 ////////////
-	if err = nginxController.handlePodObject(key); err != nil {
+	if err = nginxController.handlePodObject(key); err != nil && !errors.IsNotFound(err) {
 		goto FAIL
 	}
 
@@ -114,9 +114,6 @@ func (nginxController *NginxController) handlePodObject(key string) (err error) 
 
 	// 从local cache获取pod信息
 	if pod, err = nginxController.PodInformer.Lister().Pods(namespace).Get(name); err != nil {
-		if errors.IsNotFound(err) {
-			err = nil
-		}
 		return
 	}
 
