@@ -78,7 +78,7 @@ func (nginxController *NginxController) processNginxEvent() {
 		goto FAIL
 	}
 
-	// 处理成功，重置限速计数
+	// 处理成功，重置失败计数
 	nginxController.NginxWorkqueue.Forget(obj)
 	return
 
@@ -121,7 +121,7 @@ func (nginxController *NginxController) handleNginxEvent(key string) (err error)
 
 	// 筛选出关联的POD
 	selector = labels.NewSelector()
-	if requirement, err = labels.NewRequirement("nginxKey", selection.Equals, []string{name}); err != nil {
+	if requirement, err = labels.NewRequirement("nginxKey", selection.Equals, []string{key}); err != nil {
 		return
 	}
 	selector = selector.Add(*requirement)	// 注意返回值覆盖
