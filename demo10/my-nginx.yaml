@@ -3,4 +3,4 @@ kind: Nginx
 metadata:
   name: my-nginx
 spec:
-  replicas: 2
+  replicas: 3

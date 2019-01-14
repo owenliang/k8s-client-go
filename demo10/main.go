@@ -12,6 +12,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/informers"
 	core_v1 "k8s.io/client-go/informers/core/v1"
+	"k8s.io/klog"
+	"flag"
 )
 
 func main() {
@@ -26,6 +28,11 @@ func main() {
 		nginxController *controller.NginxController
 		err error
 	)
+
+	// 日志参数
+	klog.InitFlags(nil)
+	flag.Set("logtostderr", "1") // 输出日志到stderr
+	flag.Parse()
 
 	// 读取admin.conf, 生成客户端基本配置
 	if restConf, err = common.GetRestConf(); err != nil {
@@ -43,9 +50,9 @@ func main() {
 	}
 
 	// 内建informer工厂
-	informerFactory = informers.NewSharedInformerFactory(clientset, time.Second * 30)
+	informerFactory = informers.NewSharedInformerFactory(clientset, time.Second * 120)
 	// crd Informer工厂
-	crdInformerFactory = externalversions.NewSharedInformerFactory(crdClientset, time.Second * 30)
+	crdInformerFactory = externalversions.NewSharedInformerFactory(crdClientset, time.Second * 120)
 
 	// POD informer
 	podInformer = informerFactory.Core().V1().Pods()
