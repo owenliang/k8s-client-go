@@ -74,8 +74,15 @@ func (handler *streamHandler) Read(p []byte) (size int, err error) {
 
 // executor回调向web端输出
 func (handler *streamHandler) Write(p []byte) (size int, err error) {
+	var (
+		copyData []byte
+	)
+
+	// 产生副本
+	copyData = make([]byte, len(p))
+	copy(copyData, p)
 	size = len(p)
-	err = handler.wsConn.WsWrite(websocket.TextMessage, p)
+	err = handler.wsConn.WsWrite(websocket.TextMessage, copyData)
 	return
 }
 
